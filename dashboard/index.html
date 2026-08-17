@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SAP BASIS Monitoring Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #38bdf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; }
+    body { background: var(--bg); color: var(--text); padding: 18px; overflow-x: hidden; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon { background: var(--primary); color: #fff; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; }
+    .btn-primary { background: var(--primary); color: #fff; border: none; padding: 9px 16px; border-radius: 7px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; font-size: 13px; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    /* Telemetry Banner */
+    .status-banner { background: #131d33; border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .status-badge-running { background: rgba(56, 189, 248, 0.2); color: var(--info); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+    .status-badge-idle { background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+
+    /* System Tabs */
+    .system-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .tab-btn { background: #1e293b; border: 1px solid var(--border); padding: 7px 16px; border-radius: 20px; font-weight: 600; font-size: 12px; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* Layout Grid */
+    .main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+    .cards-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .card { background: var(--card-bg); padding: 14px; border-radius: 10px; border: 1px solid var(--border); }
+    .card-title { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 4px; }
+    .card-value { font-size: 20px; font-weight: 800; }
+    .status-healthy { color: var(--success); }
+    .status-warning { color: var(--warning); }
+    .status-critical { color: var(--danger); }
+    .status-unknown { color: #64748b; }
+
+    /* Metrics Table */
+    .section-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .metrics-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 16px; }
+    .metrics-table th, .metrics-table td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; }
+    .metrics-table th { background: #0f172a; color: var(--text-muted); font-size: 10px; text-transform: uppercase; }
+    .badge { padding: 2px 7px; border-radius: 5px; font-size: 10px; font-weight: 700; }
+    .badge-ok { background: rgba(16,185,129,0.15); color: #34d399; }
+    .badge-warning { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    .badge-critical { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    /* T-Code Grid */
+    .tcode-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
+    .tcode-box { background: var(--card-bg); border: 1px solid var(--border); border-left: 3px solid var(--primary); padding: 8px 10px; border-radius: 6px; }
+    .tcode-name { font-weight: 700; font-size: 11px; color: #818cf8; margin-bottom: 2px; }
+    .tcode-val { font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Sidebar */
+    .sidebar { display: flex; flex-direction: column; gap: 14px; }
+    .form-group { margin-bottom: 8px; }
+    .form-group label { display: block; font-size: 10px; font-weight: 600; color: var(--text-muted); margin-bottom: 3px; }
+    .form-control { width: 100%; padding: 7px 9px; background: #0f172a; border: 1px solid var(--border); border-radius: 5px; font-size: 11px; color: #fff; outline: none; }
+    .form-control:focus { border-color: var(--primary); }
+    .form-hint { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+    .btn-full { width: 100%; justify-content: center; margin-top: 4px; }
+    
+    .pulse-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .pulse-blue { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+    .pulse-green { background: #10b981; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">S</div>
+      <div>
+        <h1 style="font-size: 17px; font-weight: 800;">SAP BASIS AI Monitor</h1>
+        <p id="updatedAt" style="font-size: 11px; color: var(--text-muted);">Loaded live</p>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="triggerMonitoring()">
+      <i class="fa-solid fa-play"></i> <span id="runBtnText">Run Monitoring Now</span>
+    </button>
+  </div>
+
+  <!-- Live Telemetry Status Banner -->
+  <div class="status-banner">
+    <div>
+      <span id="telemetryBadge" class="status-badge-idle"><span class="pulse-dot pulse-green"></span> IDLE</span>
+      <span id="currentActivityText" style="font-size: 12px; margin-left: 10px; font-weight: 600; color: #e2e8f0;">Standing by</span>
+    </div>
+    <div style="text-align: right; font-size: 11px; color: var(--text-muted);">
+      <div>Last Completed: <strong id="lastRunTime" style="color: #fff;">Not yet run</strong></div>
+      <div>Active System Next Run: <strong id="activeSysNextRun" style="color: var(--info);">No active schedule</strong></div>
+    </div>
+  </div>
+
+  <!-- Dynamic System Tabs -->
+  <div class="system-tabs" id="systemTabsContainer"></div>
+
+  <div class="main-grid">
+    <!-- Left Column -->
+    <div>
+      <div class="cards-row">
+        <div class="card">
+          <div class="card-title">Overall Status</div>
+          <div class="card-value" id="overallStatus">--</div>
+          <div id="subSystemInfo" style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">--</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active Locks (SM12)</div>
+          <div class="card-value" id="activeLocks">--</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">Table enqueue entries</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Short Dumps (ST22)</div>
+          <div class="card-value" id="dumpCount">--</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">Exceptions today/yesterday</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Alerts</div>
+          <div class="card-value status-healthy" id="alertsCount">0</div>
+          <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">Warnings + Criticals</div>
+        </div>
+      </div>
+
+      <div class="section-title"><i class="fa-solid fa-table-list" style="color:var(--primary);"></i> Live Subsystem Metrics</div>
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>Subsystem / Parameter</th>
+            <th>Observed Value</th>
+            <th>Status</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="metricsTableBody">
+          <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Select a system to view live metrics.</td></tr>
+        </tbody>
+      </table>
+
+      <div class="section-title"><i class="fa-regular fa-folder-open" style="color:var(--primary);"></i> T-Code Evidence</div>
+      <div class="tcode-grid" id="tcodeGrid"></div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="sidebar">
+      <!-- AI Assistant Card -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom: 4px;"><i class="fa-solid fa-robot" style="color:var(--primary);"></i> AI Assistant</div>
+        <p id="aiSeverity" style="font-size: 11px; font-weight: 700; margin-bottom: 2px;">Severity: --</p>
+        <p id="aiRootCause" style="font-size: 11px; color: var(--text-muted); line-height: 1.35;">--</p>
+      </div>
+
+      <!-- Per-System Automated Schedule Card -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom: 6px;">
+          <i class="fa-solid fa-clock" style="color:var(--primary);"></i> 
+          Schedule for <span id="schedTargetSys" style="color:var(--info);">TST</span>
+        </div>
+        <div class="form-group">
+          <label>Schedule Mode</label>
+          <select id="schedType" class="form-control" onchange="toggleSchedInputs()">
+            <option value="minutes">Every X Minutes</option>
+            <option value="hours">Every X Hours</option>
+            <option value="daily">Daily at Fixed Time</option>
+          </select>
+        </div>
+        <div class="form-group" id="intervalGroup">
+          <label>Interval Value</label>
+          <input type="number" id="schedInterval" class="form-control" placeholder="5" value="5">
+        </div>
+        <div class="form-group" id="timeGroup" style="display: none;">
+          <label>Daily Run Time (24h format)</label>
+          <input type="text" id="schedTime" class="form-control" placeholder="11:00" value="11:00">
+        </div>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <button type="button" class="btn-primary btn-full" onclick="saveActiveSystemSchedule()"><i class="fa-solid fa-check"></i> Set for <span id="btnSysLabel">TST</span></button>
+          <button type="button" class="btn-primary btn-full" style="background:#475569;" onclick="stopActiveSystemSchedule()"><i class="fa-solid fa-stop"></i> Stop</button>
+        </div>
+        <p id="schedStatus" style="font-size: 10px; color: var(--success); margin-top: 4px;"></p>
+      </div>
+
+      <!-- Email Manager Card -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom: 6px;"><i class="fa-solid fa-envelope" style="color:var(--primary);"></i> Sender & Report Recipients</div>
+        <form id="emailSettingsForm" onsubmit="handleSaveEmailSettings(event)">
+          <div class="form-group">
+            <label>Select Sender Account</label>
+            <select id="senderSelect" class="form-control" onchange="handleSenderChange()"></select>
+          </div>
+          <div class="form-group" id="newSenderGroup" style="display: none;">
+            <label>New Sender Email Address</label>
+            <input type="email" id="newSenderInput" class="form-control" placeholder="sender@gmail.com">
+          </div>
+          <div class="form-group" id="passwordGroup" style="display: none;">
+            <label>Gmail 16-Character App Password</label>
+            <input type="password" id="emailPassword" class="form-control" placeholder="16-character code">
+            <div class="form-hint">Google Account &rarr; Security &rarr; App Passwords</div>
+          </div>
+          <div class="form-group">
+            <label>Primary Recipients (To)</label>
+            <input type="text" id="emailRecipients" class="form-control" placeholder="user1@company.com, user2@company.com" required>
+            <div class="form-hint">Comma-separated emails</div>
+          </div>
+          <div class="form-group">
+            <label>Carbon Copy (CC)</label>
+            <input type="text" id="emailCcRecipients" class="form-control" placeholder="lead@company.com, team@company.com">
+            <div class="form-hint">Comma-separated CC emails</div>
+          </div>
+          <button type="submit" class="btn-primary btn-full"><i class="fa-solid fa-floppy-disk"></i> Save Email Settings</button>
+        </form>
+        <p id="emailSaveStatus" style="font-size: 10px; color: var(--success); margin-top: 4px;"></p>
+      </div>
+
+      <!-- Add System Card -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom: 8px;"><i class="fa-solid fa-server" style="color:var(--primary);"></i> Add / Configure System</div>
+        <form id="addSystemForm" onsubmit="handleAddSystem(event)">
+          <div class="form-group">
+            <label>System Name / ID</label>
+            <input type="text" id="sysId" class="form-control" placeholder="e.g. PRD, DEV" required>
+          </div>
+          <div class="form-group">
+            <label>Client</label>
+            <input type="text" id="sysClient" class="form-control" placeholder="e.g. 100, 000" required>
+          </div>
+          <div class="form-group">
+            <label>Logon Connection Name</label>
+            <input type="text" id="sysConn" class="form-control" placeholder="Exact SAP Logon entry name" required>
+          </div>
+          <div class="form-group">
+            <label>SAP Username</label>
+            <input type="text" id="sysUser" class="form-control" placeholder="e.g. BASIS_USER" required>
+          </div>
+          <div class="form-group">
+            <label>SAP Password</label>
+            <input type="password" id="sysPass" class="form-control" placeholder="Password" required>
+          </div>
+          <button type="submit" class="btn-primary btn-full"><i class="fa-solid fa-plus"></i> Add System</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeSystemId = "TST";
+    let configuredSystems = [];
+    let savedSendersList = [];
+
+    window.addEventListener("pywebviewready", async function () {
+      await loadSystemsList();
+      await loadEmailSettings();
+      if (configuredSystems.length > 0) {
+        await switchSystem(configuredSystems[0].id || configuredSystems[0].name);
+      }
+      setInterval(pollTelemetry, 2000);
+    });
+
+    async function pollTelemetry() {
+      if (!window.pywebview || !window.pywebview.api) return;
+      const t = await window.pywebview.api.get_scheduler_telemetry();
+      if (!t) return;
+
+      const badge = document.getElementById("telemetryBadge");
+      if (t.is_running) {
+        badge.className = "status-badge-running";
+        badge.innerHTML = `<span class="pulse-dot pulse-blue"></span> RUNNING (${t.current_system || 'SAP'})`;
+      } else {
+        badge.className = "status-badge-idle";
+        badge.innerHTML = `<span class="pulse-dot pulse-green"></span> IDLE`;
+      }
+
+      document.getElementById("currentActivityText").innerText = t.current_activity || "Standing by";
+      document.getElementById("lastRunTime").innerText = t.last_run_timestamp || "Not yet run";
+
+      // Also refresh active system next run time
+      const sched = await window.pywebview.api.get_system_schedule(activeSystemId);
+      if (sched) {
+        document.getElementById("activeSysNextRun").innerText = `${activeSystemId}: ${sched.next_run}`;
+      }
+    }
+
+    async function loadSystemsList() {
+      if (!window.pywebview || !window.pywebview.api) return;
+      configuredSystems = await window.pywebview.api.get_configured_systems();
+      renderTabs();
+    }
+
+    async function loadEmailSettings() {
+      if (!window.pywebview || !window.pywebview.api) return;
+      const settings = await window.pywebview.api.get_email_settings();
+      if (settings) {
+        savedSendersList = settings.saved_senders || settings.saved_senders_list || [];
+        renderSenderDropdown(settings.active_sender || settings.sender_email || "");
+        document.getElementById("emailRecipients").value = Array.isArray(settings.recipients) ? settings.recipients.join(", ") : (settings.recipients || "");
+        document.getElementById("emailCcRecipients").value = Array.isArray(settings.cc_recipients) ? settings.cc_recipients.join(", ") : (settings.cc_recipients || "");
+      }
+    }
+
+    function renderSenderDropdown(selectedSender) {
+      const select = document.getElementById("senderSelect");
+      select.innerHTML = "";
+
+      savedSendersList.forEach(email => {
+        const opt = document.createElement("option");
+        opt.value = email;
+        opt.innerText = email + " (Saved Password)";
+        if (email === selectedSender) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      const newOpt = document.createElement("option");
+      newOpt.value = "__NEW__";
+      newOpt.innerText = "➕ + Add New Sender Email";
+      if (!selectedSender || !savedSendersList.includes(selectedSender)) {
+        newOpt.selected = true;
+      }
+      select.appendChild(newOpt);
+      handleSenderChange();
+    }
+
+    function handleSenderChange() {
+      const select = document.getElementById("senderSelect");
+      const isNew = select.value === "__NEW__";
+      document.getElementById("newSenderGroup").style.display = isNew ? "block" : "none";
+      document.getElementById("passwordGroup").style.display = isNew ? "block" : "none";
+      document.getElementById("newSenderInput").required = isNew;
+      document.getElementById("emailPassword").required = isNew;
+    }
+
+    async function handleSaveEmailSettings(e) {
+      e.preventDefault();
+      if (!window.pywebview || !window.pywebview.api) return;
+
+      const select = document.getElementById("senderSelect");
+      const isNew = select.value === "__NEW__";
+      let sender = isNew ? document.getElementById("newSenderInput").value.trim() : select.value;
+      let password = isNew ? document.getElementById("emailPassword").value.trim() : "";
+
+      if (!sender) {
+        alert("Please provide a valid sender email.");
+        return;
+      }
+
+      const recipients = document.getElementById("emailRecipients").value.split(",").map(s => s.trim()).filter(Boolean);
+      const cc = document.getElementById("emailCcRecipients").value.split(",").map(s => s.trim()).filter(Boolean);
+
+      const res = await window.pywebview.api.save_email_settings({
+        sender_email: sender,
+        sender_password: password,
+        recipients: recipients,
+        cc_recipients: cc
+      });
+
+      const status = document.getElementById("emailSaveStatus");
+      if (res.success) {
+        status.style.color = "var(--success)";
+        status.innerText = res.message;
+        await loadEmailSettings();
+      } else {
+        status.style.color = "var(--danger)";
+        status.innerText = res.error;
+      }
+    }
+
+    function renderTabs() {
+      const container = document.getElementById("systemTabsContainer");
+      container.innerHTML = "";
+      configuredSystems.forEach(sys => {
+        const id = sys.id || sys.name;
+        const btn = document.createElement("button");
+        btn.className = `tab-btn ${id.toUpperCase() === activeSystemId.toUpperCase() ? 'active' : ''}`;
+        btn.innerText = id.toUpperCase();
+        btn.onclick = () => switchSystem(id);
+        container.appendChild(btn);
+      });
+    }
+
+    async function switchSystem(systemId) {
+      activeSystemId = systemId.toUpperCase();
+      renderTabs();
+
+      document.getElementById("schedTargetSys").innerText = activeSystemId;
+      document.getElementById("btnSysLabel").innerText = activeSystemId;
+
+      if (!window.pywebview || !window.pywebview.api) return;
+      const data = await window.pywebview.api.get_system_status(activeSystemId);
+      renderSystemData(data);
+
+      // Load active system's specific schedule settings into inputs
+      const sched = await window.pywebview.api.get_system_schedule(activeSystemId);
+      if (sched) {
+        document.getElementById("schedType").value = sched.mode || "minutes";
+        if (sched.mode === "daily") {
+          document.getElementById("schedTime").value = sched.value || "11:00";
+        } else {
+          document.getElementById("schedInterval").value = sched.value || "5";
+        }
+        toggleSchedInputs();
+        document.getElementById("schedStatus").innerText = sched.is_active ? `Active: Next run ${sched.next_run}` : "No schedule set for this system";
+      }
+    }
+
+    function renderSystemData(data) {
+      if (!data) return;
+
+      document.getElementById("updatedAt").innerText = `Updated: ${data.cycle_timestamp || 'N/A'}`;
+      document.getElementById("subSystemInfo").innerText = `${data.system} / Client ${data.client || '000'}`;
+
+      const statusElem = document.getElementById("overallStatus");
+      statusElem.innerText = data.overall_status || "UNKNOWN";
+      statusElem.className = "card-value " + (
+        data.overall_status === "HEALTHY" ? "status-healthy" :
+        data.overall_status === "WARNING" ? "status-warning" :
+        data.overall_status === "CRITICAL" ? "status-critical" : "status-unknown"
+      );
+
+      const metrics = data.metrics || [];
+      let alerts = 0;
+      let locks = "0";
+      let dumps = "0";
+
+      const tableBody = document.getElementById("metricsTableBody");
+      tableBody.innerHTML = "";
+
+      if (metrics.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No metric runs recorded yet for ${activeSystemId}.</td></tr>`;
+      } else {
+        metrics.forEach(m => {
+          if (m.status === "WARNING" || m.status === "CRITICAL") alerts++;
+          if (m.name.includes("SM12")) locks = m.display_value.replace(/[^0-9]/g, '') || "0";
+          if (m.name.includes("ST22")) dumps = m.display_value.replace(/[^0-9]/g, '') || "0";
+
+          const row = document.createElement("tr");
+          const badgeClass = m.status === "OK" ? "badge-ok" : (m.status === "WARNING" ? "badge-warning" : "badge-critical");
+          row.innerHTML = `
+            <td><strong>${m.name}</strong></td>
+            <td>${m.display_value}</td>
+            <td><span class="badge ${badgeClass}">${m.status}</span></td>
+            <td style="color: var(--text-muted);">${m.detail || ''}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      }
+
+      document.getElementById("activeLocks").innerText = locks;
+      document.getElementById("dumpCount").innerText = dumps;
+      document.getElementById("alertsCount").innerText = alerts;
+      document.getElementById("alertsCount").className = "card-value " + (alerts > 0 ? "status-warning" : "status-healthy");
+
+      const ai = data.ai_analysis || {};
+      document.getElementById("aiSeverity").innerText = `Severity: ${ai.severity || 'NORMAL'}`;
+      document.getElementById("aiSeverity").className = (ai.severity === 'CRITICAL' ? 'status-critical' : (ai.severity === 'WARNING' ? 'status-warning' : 'status-healthy'));
+      document.getElementById("aiRootCause").innerText = ai.root_cause || "System parameters within normal baseline.";
+
+      const grid = document.getElementById("tcodeGrid");
+      grid.innerHTML = "";
+      (data.gui_evidence || []).forEach(e => {
+        const box = document.createElement("div");
+        box.className = "tcode-box";
+        box.innerHTML = `<div class="tcode-name">${e.tcode}</div><div class="tcode-val">${e.display_value || 'Evidence captured'}</div>`;
+        grid.appendChild(box);
+      });
+    }
+
+    async function triggerMonitoring() {
+      if (!window.pywebview || !window.pywebview.api) return;
+      const btn = document.querySelector(".header .btn-primary");
+      const btnText = document.getElementById("runBtnText");
+      
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.style.opacity = "0.6";
+      btnText.innerText = `Running ${activeSystemId}...`;
+
+      const res = await window.pywebview.api.run_monitoring_for_system(activeSystemId);
+      
+      const checkInterval = setInterval(async () => {
+        const data = await window.pywebview.api.get_system_status(activeSystemId);
+        renderSystemData(data);
+      }, 4000);
+
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btnText.innerText = "Run Monitoring Now";
+      }, 60000);
+    }
+
+    function toggleSchedInputs() {
+      const type = document.getElementById("schedType").value;
+      document.getElementById("timeGroup").style.display = (type === "daily") ? "block" : "none";
+      document.getElementById("intervalGroup").style.display = (type !== "daily") ? "block" : "none";
+    }
+
+    async function saveActiveSystemSchedule() {
+      if (!window.pywebview || !window.pywebview.api) return;
+      const type = document.getElementById("schedType").value;
+      const value = type === "daily" ? document.getElementById("schedTime").value.trim() : document.getElementById("schedInterval").value.trim();
+
+      const res = await window.pywebview.api.set_system_schedule(activeSystemId, type, value);
+      const statusEl = document.getElementById("schedStatus");
+      statusEl.style.color = res.success ? "var(--success)" : "var(--danger)";
+      statusEl.innerText = res.message || res.error;
+      await pollTelemetry();
+    }
+
+    async function stopActiveSystemSchedule() {
+      if (!window.pywebview || !window.pywebview.api) return;
+      const res = await window.pywebview.api.stop_system_schedule(activeSystemId);
+      document.getElementById("schedStatus").innerText = res.message;
+      await pollTelemetry();
+    }
+
+    async function handleAddSystem(e) {
+      e.preventDefault();
+      const sysId = document.getElementById("sysId").value.trim().toUpperCase();
+      const client = document.getElementById("sysClient").value.trim();
+      const connection_name = document.getElementById("sysConn").value.trim();
+      const username = document.getElementById("sysUser").value.trim();
+      const password = document.getElementById("sysPass").value.trim();
+
+      const res = await window.pywebview.api.add_system({
+        name: sysId,
+        client: client,
+        connection_name: connection_name,
+        username: username,
+        password: password
+      });
+
+      if (res.success) {
+        document.getElementById("addSystemForm").reset();
+        await loadSystemsList();
+        switchSystem(sysId);
+      } else {
+        alert(`Failed to add system: ${res.error}`);
+      }
+    }
+  </script>
+</body>
+</html>

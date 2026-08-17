@@ -1,0 +1,194 @@
+{
+  "system": "QAS",
+  "client": "100",
+  "cycle_timestamp": "2026-08-17 11:41:38",
+  "overall_status": "WARNING",
+  "metrics": [
+    {
+      "name": "Active User Sessions (AL08)",
+      "display_value": "captured (1)",
+      "status": "OK",
+      "detail": "Connected users on QAS"
+    },
+    {
+      "name": "SAP Enqueue Locks (SM12)",
+      "display_value": "1 active lock(s)",
+      "status": "OK",
+      "detail": "Table enqueue lock entries"
+    },
+    {
+      "name": "Update Requests (SM13)",
+      "display_value": "captured (1)",
+      "status": "WARNING",
+      "detail": "V1/V2 Update tasks"
+    },
+    {
+      "name": "Background Jobs (SM37)",
+      "display_value": "Active: 0 | Cancelled: 0",
+      "status": "OK",
+      "detail": "Job scheduler status"
+    },
+    {
+      "name": "Active Instances (SM51)",
+      "display_value": "1 instance(s)",
+      "status": "OK",
+      "detail": "Application server nodes"
+    },
+    {
+      "name": "Active Work Processes (SM66)",
+      "display_value": "1 process(es) running",
+      "status": "OK",
+      "detail": "DIA/BGD/UPD processes"
+    },
+    {
+      "name": "tRFC Errors / Backlog (SM58)",
+      "display_value": "captured (1)",
+      "status": "WARNING",
+      "detail": "Transactional RFC queue"
+    },
+    {
+      "name": "ABAP Short Dumps (ST22)",
+      "display_value": "0 dump(s)",
+      "status": "OK",
+      "detail": "Runtime exceptions"
+    },
+    {
+      "name": "Spool Requests (SP01)",
+      "display_value": "0 request(s)",
+      "status": "OK",
+      "detail": "Print/spool output jobs"
+    }
+  ],
+  "ai_analysis": {
+    "severity": "WARNING",
+    "root_cause": "System QAS evidence verified. 9 parameters checked, 2 alert(s) found.",
+    "confidence": "HIGH"
+  },
+  "gui_evidence": [
+    {
+      "tcode": "AL08",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "DB01",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "DB02",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "DB12",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "SCOT",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "SM12",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "lock_count": "1"
+      }
+    },
+    {
+      "tcode": "SM13",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "update_summary": "0 Update records found"
+      }
+    },
+    {
+      "tcode": "SM21",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "SM37",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "active_jobs": 0
+      }
+    },
+    {
+      "tcode": "SM37_CANCELLED",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "cancelled_jobs": 0
+      }
+    },
+    {
+      "tcode": "SM51",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "instances_started": 1
+      }
+    },
+    {
+      "tcode": "SM58",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "trfc_status": "Nothing was selected"
+      }
+    },
+    {
+      "tcode": "SM66",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "running_processes": 1
+      }
+    },
+    {
+      "tcode": "SMLG",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "SMQ1",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "entries_displayed": 0,
+        "queues_displayed": 0
+      }
+    },
+    {
+      "tcode": "SMQ2",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "entries_displayed": 0,
+        "queues_displayed": 0
+      }
+    },
+    {
+      "tcode": "SOST",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "SP01",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "spool_count_visible": 0
+      }
+    },
+    {
+      "tcode": "ST03N",
+      "display_value": "captured (1)",
+      "extra_data": {}
+    },
+    {
+      "tcode": "ST22",
+      "display_value": "captured (1)",
+      "extra_data": {
+        "dump_count": 0
+      }
+    }
+  ],
+  "generated_at": "2026-08-17 11:41:38"
+}

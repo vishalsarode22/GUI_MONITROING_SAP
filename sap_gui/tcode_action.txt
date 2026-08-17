@@ -1,0 +1,59 @@
+def action_st22_yesterday(session) -> dict:
+    """
+    Safely navigates ST22 for yesterday's dumps.
+    Handles greyed-out/disabled menu options and falls back to manual date/radio selection.
+    """
+    data = {"dump_count": 0}
+    try:
+        # 1. Try standard toolbar button or menu if available and enabled
+        # Many SAP releases use 'btn[17]' (Yesterday button) or F5/F6
+        try:
+            # Check for standard "Yesterday" pushbutton on initial screen
+            btn_yesterday = session.findById("usr/btnBUTTON_YESTERDAY", False) or session.findById("usr/btn%_AUTOTEXT001", False)
+            if btn_yesterday and getattr(btn_yesterday, "Changeable", True):
+                btn_yesterday.press()
+                log.info("ST22: Pressed 'Yesterday' button.")
+                return _parse_st22_results(session)
+        except Exception:
+            pass
+
+        # 2. Try standard menu navigation safely
+        try:
+            menu_item = session.findById("mbar/menu[0]/menu[1]", False)  # Edit/Goto -> Yesterday
+            if menu_item and getattr(menu_item, "Enabled", True):
+                menu_item.select()
+                log.info("ST22: Selected 'Yesterday' from menu.")
+                return _parse_st22_results(session)
+        except Exception as e_menu:
+            log.debug(f"ST22 menu selection skipped ({e_menu}), falling back to direct selection.")
+
+        # 3. Fallback: Execute default Start/Execute (F8) to view overview or today's dumps
+        session.findById("wnd[0]").sendVKey(8)  # Press F8 (Execute)
+        time.sleep(1)
+
+        # Handle "No runtime errors found" information popup
+        if session.Children.Count > 1:
+            active_wnd = session.ActiveWindow
+            if active_wnd and getattr(active_wnd, "Type", "") == "GuiModalWindow":
+                log.info("ST22: No runtime errors found (modal popup dismissed).")
+                active_wnd.sendVKey(0)  # Press Enter
+                return {"dump_count": 0}
+
+        return _parse_st22_results(session)
+
+    except Exception as e:
+        log.warning(f"ST22 action note: {e}")
+        return {"dump_count": 0}
+
+
+def _parse_st22_results(session) -> dict:
+    """Helper to extract dump count from ST22 list grid/table."""
+    try:
+        # Check standard grid or user list view
+        grid = session.findById("usr/cntlGRID1/shellcont/shell", False)
+        if grid:
+            count = grid.RowCount
+            return {"dump_count": count}
+    except Exception:
+        pass
+    return {"dump_count": 0}

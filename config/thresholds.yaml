@@ -1,0 +1,19 @@
+cpu:
+  warning: 80
+  critical: 90
+
+memory:
+  warning: 80
+  critical: 90
+
+swap:
+  warning: 20
+  critical: 40
+
+disk:
+  warning: 80
+  critical: 90
+
+load_1m:
+  warning: 4
+  critical: 8
